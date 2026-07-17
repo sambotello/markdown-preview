@@ -40,6 +40,12 @@ struct MarkdownRenderer: MarkupVisitor {
         [Block(kind: .list(items: list.listItems.map { makeListItem($0) }, isOrdered: true))]
     }
 
+    mutating func visitTable(_ table: Table) -> [Block] {
+        let headers = Array(table.head.cells).map { inlineText($0) }
+        let rows = Array(table.body.rows).map { row in Array(row.cells).map { inlineText($0) } }
+        return [Block(kind: .table(headers: headers, rows: rows))]
+    }
+
     private mutating func makeListItem(_ item: ListItem) -> Block.ListItem {
         var content = AttributedString("")
         var children: [Block] = []
