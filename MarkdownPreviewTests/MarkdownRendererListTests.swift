@@ -39,4 +39,28 @@ final class MarkdownRendererListTests: XCTestCase {
         XCTAssertTrue(isOrdered)
         XCTAssertEqual(items.map { String($0.content.characters) }, ["First", "Second"])
     }
+
+    // Verified empirically (see task-5-report.md) that a hard line break which is a
+    // *direct* child of a list item's paragraph never produces a literal "\n" in the
+    // joined `.format()` source: each paragraph child is formatted independently via
+    // `markup.children.map { $0.format() }`, so the newline `LineBreak.format()` queues
+    // is never flushed (nothing else is printed within that isolated formatting call) —
+    // it collapses into extra leaked alignment-prefix spaces instead of an embedded "\n".
+    //
+    // A literal "\n" *does* appear when the line break is nested inside another inline
+    // span (e.g. a `Strong` node) that itself has multiple children, because `.format()`
+    // on that span visits all of its descendants within one continuous formatting pass,
+    // properly flushing the queued newline. That reproduces the real bug: an embedded
+    // "\n" followed by a leaked list-marker-alignment prefix on the interior line.
+    func testListItemWithHardLineBreakDoesNotLeakAlignmentPrefixOnInteriorLine() {
+        let source = "- **First line  \n  Second line**"
+        let blocks = MarkdownRenderer.render(markdown: source, baseURL: baseURL)
+
+        guard case .list(let items, _) = blocks[0].kind else {
+            return XCTFail("Expected list block, got \(blocks[0].kind)")
+        }
+        // "First line" + the two-space hard-break marker + a real newline, then
+        // "Second line" with NO leaked leading-space padding before it.
+        XCTAssertEqual(String(items[0].content.characters), "First line  \nSecond line")
+    }
 }

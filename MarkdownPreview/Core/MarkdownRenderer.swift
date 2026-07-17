@@ -45,7 +45,7 @@ struct MarkdownRenderer: MarkupVisitor {
         var children: [Block] = []
         for child in item.children {
             if let paragraph = child as? Paragraph {
-                content += inlineText(paragraph)
+                content += listItemInlineText(paragraph)
             } else {
                 children += visit(child)
             }
@@ -55,8 +55,17 @@ struct MarkdownRenderer: MarkupVisitor {
 
     func inlineText(_ markup: Markup) -> AttributedString {
         let source = markup.children.map { $0.format() }.joined()
-            .trimmingCharacters(in: .whitespaces)
         let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
         return (try? AttributedString(markdown: source, options: options)) ?? AttributedString(source)
+    }
+
+    private func listItemInlineText(_ paragraph: Paragraph) -> AttributedString {
+        let source = paragraph.children.map { $0.format() }.joined()
+        let dedented = source
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { line in String(line.drop(while: { $0 == " " })) }
+            .joined(separator: "\n")
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        return (try? AttributedString(markdown: dedented, options: options)) ?? AttributedString(dedented)
     }
 }
