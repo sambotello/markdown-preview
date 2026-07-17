@@ -291,10 +291,12 @@ struct MarkdownRenderer: MarkupVisitor {
     func inlineText(_ markup: Markup) -> AttributedString {
         let source = markup.children.map { $0.format() }.joined()
         let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        return (try? AttributedString(markdown: source, options: options)) ?? AttributedString(markup.plainText)
+        return (try? AttributedString(markdown: source, options: options)) ?? AttributedString(source)
     }
 }
 ```
+
+(Note: the fallback uses `source`, the already-joined markdown text, rather than `markup.plainText` — `plainText` is declared on `PlainTextConvertibleMarkup`, not the base `Markup` protocol this function's parameter is typed as, so it won't compile on a generic `Markup` value.)
 
 - [ ] **Step 4: Run test to verify it passes**
 
