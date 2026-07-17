@@ -47,7 +47,7 @@ non-local (remote) images, math/LaTeX, diagrams (e.g. Mermaid).
    file-missing / error).
 2. **`FileWatcher`** — wraps a `DispatchSourceFileSystemObject` on the file's
    descriptor. Detects writes instantly. Tolerates delete+recreate (as done
-   by editors that save atomically) via a short grace period before
+   by editors that save atomically) via a 500ms grace period before
    reporting the file as missing.
 3. **`MarkdownParser`** — thin wrapper around `swift-markdown`'s
    `Document(parsing:)`, Apple's official CommonMark/GFM parser (the same one
@@ -75,11 +75,10 @@ non-local (remote) images, math/LaTeX, diagrams (e.g. Mermaid).
 3. `FileWatcher` starts monitoring that file's descriptor.
 4. On a write event: re-read → re-parse → re-render, instantly, preserving
    scroll position where possible.
-5. On a delete/rename event: wait briefly (grace period) in case it's an
-   atomic save recreating the file at the same path. If it doesn't reappear,
-   switch to the "file no longer available" state while keeping the window
-   open and still watching, so it recovers automatically if the file comes
-   back.
+5. On a delete/rename event: wait 500ms in case it's an atomic save
+   recreating the file at the same path. If it doesn't reappear, switch to
+   the "file no longer available" state while keeping the window open and
+   still watching, so it recovers automatically if the file comes back.
 
 ## Error Handling
 
@@ -87,9 +86,9 @@ non-local (remote) images, math/LaTeX, diagrams (e.g. Mermaid).
   window instead of a preview.
 - **Unsupported file dropped** (not `.md`/`.markdown`): inline "Not a
   markdown file" message; the drop zone only accepts these extensions.
-- **File deleted/renamed/moved while watched**: per Data Flow above — grace
-  period, then "File no longer available" message; window keeps watching and
-  recovers automatically if the file reappears.
+- **File deleted/renamed/moved while watched**: per Data Flow above — a
+  500ms grace period, then "File no longer available" message; window keeps
+  watching and recovers automatically if the file reappears.
 - **Malformed markdown**: not treated as an error — CommonMark parsers
   (including `swift-markdown`) always produce a best-effort AST, so content
   renders as well as it can.
@@ -106,8 +105,8 @@ non-local (remote) images, math/LaTeX, diagrams (e.g. Mermaid).
     assert headings, lists, code blocks, tables, and images parse into the
     expected `Block` values.
   - `FileWatcher` against real temp files — verify write detection, and the
-    delete→recreate grace-period behavior (atomic saves shouldn't flip to
-    "missing").
+    delete→recreate 500ms grace-period behavior (atomic saves shouldn't flip
+    to "missing").
 - **Manual verification**: drag in a markdown file exercising every
   supported element; edit it externally and confirm instant live refresh;
   delete/rename it externally and confirm the graceful recovery behavior;
