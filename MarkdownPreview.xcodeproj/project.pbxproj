@@ -6,11 +6,31 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		CB481A68BFEBA08903E343FC /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = C098DA47170E46A8A2AFEB60 /* Markdown */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E419AA1A300AD0F300097EE2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E45D9AC5300A93A60005DE51 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E45D9ACC300A93A60005DE51;
+			remoteInfo = MarkdownPreview;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		E419AA16300AD0F300097EE2 /* MarkdownPreviewTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownPreviewTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E45D9ACD300A93A60005DE51 /* MarkdownPreview.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarkdownPreview.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		E419AA17300AD0F300097EE2 /* MarkdownPreviewTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MarkdownPreviewTests;
+			sourceTree = "<group>";
+		};
 		E45D9ACF300A93A60005DE51 /* MarkdownPreview */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = MarkdownPreview;
@@ -19,10 +39,18 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		E419AA13300AD0F300097EE2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E45D9ACA300A93A60005DE51 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CB481A68BFEBA08903E343FC /* Markdown in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,6 +61,7 @@
 			isa = PBXGroup;
 			children = (
 				E45D9ACF300A93A60005DE51 /* MarkdownPreview */,
+				E419AA17300AD0F300097EE2 /* MarkdownPreviewTests */,
 				E45D9ACE300A93A60005DE51 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +70,7 @@
 			isa = PBXGroup;
 			children = (
 				E45D9ACD300A93A60005DE51 /* MarkdownPreview.app */,
+				E419AA16300AD0F300097EE2 /* MarkdownPreviewTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,6 +78,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		E419AA15300AD0F300097EE2 /* MarkdownPreviewTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E419AA1C300AD0F300097EE2 /* Build configuration list for PBXNativeTarget "MarkdownPreviewTests" */;
+			buildPhases = (
+				E419AA12300AD0F300097EE2 /* Sources */,
+				E419AA13300AD0F300097EE2 /* Frameworks */,
+				E419AA14300AD0F300097EE2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E419AA1B300AD0F300097EE2 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E419AA17300AD0F300097EE2 /* MarkdownPreviewTests */,
+			);
+			name = MarkdownPreviewTests;
+			packageProductDependencies = (
+			);
+			productName = MarkdownPreviewTests;
+			productReference = E419AA16300AD0F300097EE2 /* MarkdownPreviewTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		E45D9ACC300A93A60005DE51 /* MarkdownPreview */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E45D9AD8300A93A70005DE51 /* Build configuration list for PBXNativeTarget "MarkdownPreview" */;
@@ -65,6 +118,7 @@
 			);
 			name = MarkdownPreview;
 			packageProductDependencies = (
+				C098DA47170E46A8A2AFEB60 /* Markdown */,
 			);
 			productName = MarkdownPreview;
 			productReference = E45D9ACD300A93A60005DE51 /* MarkdownPreview.app */;
@@ -80,6 +134,10 @@
 				LastSwiftUpdateCheck = 2650;
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
+					E419AA15300AD0F300097EE2 = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = E45D9ACC300A93A60005DE51;
+					};
 					E45D9ACC300A93A60005DE51 = {
 						CreatedOnToolsVersion = 26.5;
 					};
@@ -94,17 +152,28 @@
 			);
 			mainGroup = E45D9AC4300A93A60005DE51;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AE2199FBA82E14D1BA3F8A5D /* XCRemoteSwiftPackageReference "swift-markdown" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E45D9ACE300A93A60005DE51 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				E45D9ACC300A93A60005DE51 /* MarkdownPreview */,
+				E419AA15300AD0F300097EE2 /* MarkdownPreviewTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		E419AA14300AD0F300097EE2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E45D9ACB300A93A60005DE51 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +184,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		E419AA12300AD0F300097EE2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E45D9AC9300A93A60005DE51 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +200,55 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		E419AA1B300AD0F300097EE2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E45D9ACC300A93A60005DE51 /* MarkdownPreview */;
+			targetProxy = E419AA1A300AD0F300097EE2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		E419AA1D300AD0F300097EE2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JB8AXX2C4H;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sambotello.MarkdownPreviewTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MarkdownPreview.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MarkdownPreview";
+			};
+			name = Debug;
+		};
+		E419AA1E300AD0F300097EE2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JB8AXX2C4H;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sambotello.MarkdownPreviewTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MarkdownPreview.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MarkdownPreview";
+			};
+			name = Release;
+		};
 		E45D9AD6300A93A70005DE51 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -312,6 +436,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		E419AA1C300AD0F300097EE2 /* Build configuration list for PBXNativeTarget "MarkdownPreviewTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E419AA1D300AD0F300097EE2 /* Debug */,
+				E419AA1E300AD0F300097EE2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		E45D9AC8300A93A60005DE51 /* Build configuration list for PBXProject "MarkdownPreview" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -331,6 +464,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AE2199FBA82E14D1BA3F8A5D /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swiftlang/swift-markdown";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C098DA47170E46A8A2AFEB60 /* Markdown */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AE2199FBA82E14D1BA3F8A5D /* XCRemoteSwiftPackageReference "swift-markdown" */;
+			productName = Markdown;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E45D9AC5300A93A60005DE51 /* Project object */;
 }
