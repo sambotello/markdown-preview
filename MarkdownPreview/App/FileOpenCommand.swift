@@ -26,7 +26,7 @@ struct FileOpenCommand: View {
         if let focusedDocument, focusedDocument.url == nil {
             focusedDocument.load(url: url)
         } else {
-            openWindow(value: Optional(url))
+            openWindow(value: url)
         }
     }
 }
