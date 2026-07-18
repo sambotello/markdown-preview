@@ -25,6 +25,16 @@
 		E45D9ACD300A93A60005DE51 /* MarkdownPreview.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarkdownPreview.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E4CB12A8300BFBC0003538CD /* Exceptions for "MarkdownPreview" folder in "MarkdownPreview" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E45D9ACC300A93A60005DE51 /* MarkdownPreview */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E419AA17300AD0F300097EE2 /* MarkdownPreviewTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -33,6 +43,9 @@
 		};
 		E45D9ACF300A93A60005DE51 /* MarkdownPreview */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E4CB12A8300BFBC0003538CD /* Exceptions for "MarkdownPreview" folder in "MarkdownPreview" target */,
+			);
 			path = MarkdownPreview;
 			sourceTree = "<group>";
 		};
@@ -383,6 +396,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MarkdownPreview/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -415,6 +429,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MarkdownPreview/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
