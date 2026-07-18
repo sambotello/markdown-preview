@@ -14,4 +14,14 @@ final class MarkdownRendererImageTests: XCTestCase {
         XCTAssertEqual(altText, "A diagram")
         XCTAssertEqual(url.path, "/Users/example/notes/diagram.png")
     }
+
+    func testImageWithUnresolvableSourceFallsBackToParagraphText() {
+        let source = "![A diagram]()"
+        let blocks = MarkdownRenderer.render(markdown: source, baseURL: URL(fileURLWithPath: "/tmp"))
+
+        XCTAssertEqual(blocks.count, 1)
+        guard case .paragraph = blocks[0].kind else {
+            return XCTFail("Expected paragraph fallback, got \(blocks[0].kind)")
+        }
+    }
 }

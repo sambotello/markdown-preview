@@ -22,7 +22,10 @@ struct MarkdownRenderer: MarkupVisitor {
 
     mutating func visitParagraph(_ paragraph: Paragraph) -> [Block] {
         if paragraph.childCount == 1, let image = paragraph.child(at: 0) as? Image {
-            return visitImage(image)
+            let result = visitImage(image)
+            if !result.isEmpty {
+                return result
+            }
         }
         return [Block(kind: .paragraph(text: inlineText(paragraph)))]
     }
