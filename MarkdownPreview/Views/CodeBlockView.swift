@@ -7,7 +7,7 @@ struct CodeBlockView: View {
     var body: some View {
         ScrollView(.horizontal) {
             Text(code)
-                .font(.system(.body, design: .monospaced))
+                .font(.system(size: MarkdownTypography.code, design: .monospaced))
                 .padding(8)
         }
         .background(Color.secondary.opacity(0.1))

@@ -9,7 +9,9 @@ struct TableBlockView: View {
         Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
             GridRow {
                 ForEach(Array(headers.enumerated()), id: \.offset) { _, header in
-                    Text(header).fontWeight(.bold)
+                    Text(header)
+                        .font(.system(size: MarkdownTypography.tableText))
+                        .fontWeight(.bold)
                 }
             }
             Divider()
@@ -17,6 +19,7 @@ struct TableBlockView: View {
                 GridRow {
                     ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
                         Text(cell)
+                            .font(.system(size: MarkdownTypography.tableText))
                     }
                 }
             }

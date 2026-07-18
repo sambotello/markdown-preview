@@ -12,6 +12,7 @@ struct BlockView: View {
                 .fontWeight(.bold)
         case .paragraph(let text):
             Text(text)
+                .font(.system(size: MarkdownTypography.body))
         case .codeBlock(let code, _):
             CodeBlockView(code: code)
         case .list(let items, let isOrdered):
@@ -37,10 +38,10 @@ struct BlockView: View {
 
     private func headingFont(for level: Int) -> Font {
         switch level {
-        case 1: return .title
-        case 2: return .title2
-        case 3: return .title3
-        default: return .headline
+        case 1: return .system(size: MarkdownTypography.heading1)
+        case 2: return .system(size: MarkdownTypography.heading2)
+        case 3: return .system(size: MarkdownTypography.heading3)
+        default: return .system(size: MarkdownTypography.heading4)
         }
     }
 }
