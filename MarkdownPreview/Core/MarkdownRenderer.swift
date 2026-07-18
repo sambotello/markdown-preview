@@ -57,6 +57,15 @@ struct MarkdownRenderer: MarkupVisitor {
         return [Block(kind: .image(url: url, altText: image.plainText))]
     }
 
+    mutating func visitBlockQuote(_ blockQuote: BlockQuote) -> [Block] {
+        // Detach each child from the block quote before visiting: `inlineText(_:)` formats
+        // inline children via `Markup.format()`, which derives its "> " line prefix from the
+        // *real* ancestor chain (not just the subtree being formatted). Left attached, every
+        // paragraph inside a block quote would leak a "> " prefix into its rendered text.
+        let children = blockQuote.children.flatMap { visit($0.detachedFromParent) }
+        return [Block(kind: .blockQuote(blocks: children))]
+    }
+
     private func resolvedURL(for source: String) -> URL? {
         if let url = URL(string: source), url.scheme != nil {
             return url
