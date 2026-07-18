@@ -67,8 +67,14 @@ struct MarkdownRenderer: MarkupVisitor {
     }
 
     private func resolvedURL(for source: String) -> URL? {
-        if let url = URL(string: source), url.scheme != nil {
-            return url
+        if let url = URL(string: source), let scheme = url.scheme {
+            // Only `file:` URLs are in scope here — the spec explicitly excludes remote
+            // images. A non-file scheme (e.g. `http`/`https`) is treated the same as an
+            // unresolvable source (`nil`): `visitImage` returns no block for it, and
+            // `visitParagraph`'s existing fallback then renders the paragraph as plain
+            // text instead of an image block, rather than silently fetching a remote
+            // URL synchronously on the main thread in `ImageBlockView`.
+            return scheme == "file" ? url : nil
         }
         return URL(fileURLWithPath: source, relativeTo: baseURL).absoluteURL
     }
@@ -78,7 +84,7 @@ struct MarkdownRenderer: MarkupVisitor {
         var children: [Block] = []
         for child in item.children {
             if let paragraph = child as? Paragraph {
-                content += listItemInlineText(paragraph)
+                content += inlineText(paragraph, dedentListMarkerAlignment: true)
             } else {
                 children += visit(child)
             }
@@ -86,7 +92,21 @@ struct MarkdownRenderer: MarkupVisitor {
         return Block.ListItem(content: content, children: children)
     }
 
-    func inlineText(_ markup: Markup) -> AttributedString {
+    /// - Parameter dedentListMarkerAlignment: When `true`, strips leading spaces from
+    ///   each *individual child's* formatted output (line by line) before joining.
+    ///   List item continuation lines are indented in the source to align under the
+    ///   list marker (e.g. two spaces for `"- "`), and swift-markdown's `.format()`
+    ///   re-emits that alignment padding verbatim — not just on genuine continuation
+    ///   lines, but (verified empirically) as a leaked prefix at the very start of
+    ///   *every* top-level child formatted here, since each child is formatted in an
+    ///   independent pass that still consults the real list-item ancestor chain. That
+    ///   leak must be stripped per child, before joining: once two children are joined
+    ///   by a soft break's plain `" "` separator (see below) rather than a real `"\n"`,
+    ///   a second child's leaked prefix lands mid-string, past any real `"\n"` a
+    ///   whole-string dedent pass could still find. Only list items need this
+    ///   (`makeListItem` passes `true`); headings/paragraphs/table cells aren't
+    ///   indented this way, so they pass `false` (the default).
+    func inlineText(_ markup: Markup, dedentListMarkerAlignment: Bool = false) -> AttributedString {
         // `Markup.format()` derives its output (including the newline a soft/hard line
         // break contributes) from a continuous formatting pass over a run of siblings.
         // Because each child here is formatted *independently* and the results are then
@@ -104,19 +124,14 @@ struct MarkdownRenderer: MarkupVisitor {
             if let lineBreak = child as? LineBreak {
                 return lineBreak.plainText
             }
-            return child.format()
+            let formatted = child.format()
+            guard dedentListMarkerAlignment else { return formatted }
+            return formatted
+                .split(separator: "\n", omittingEmptySubsequences: false)
+                .map { line in String(line.drop(while: { $0 == " " })) }
+                .joined(separator: "\n")
         }.joined()
         let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
         return (try? AttributedString(markdown: source, options: options)) ?? AttributedString(source)
-    }
-
-    private func listItemInlineText(_ paragraph: Paragraph) -> AttributedString {
-        let source = paragraph.children.map { $0.format() }.joined()
-        let dedented = source
-            .split(separator: "\n", omittingEmptySubsequences: false)
-            .map { line in String(line.drop(while: { $0 == " " })) }
-            .joined(separator: "\n")
-        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        return (try? AttributedString(markdown: dedented, options: options)) ?? AttributedString(dedented)
     }
 }

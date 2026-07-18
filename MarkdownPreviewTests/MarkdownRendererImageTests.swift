@@ -24,4 +24,19 @@ final class MarkdownRendererImageTests: XCTestCase {
             return XCTFail("Expected paragraph fallback, got \(blocks[0].kind)")
         }
     }
+
+    // Remote images are explicitly out of scope per the spec. `ImageBlockView` calls
+    // `NSImage(contentsOf:)` directly in its view body, which for a remote URL would be a
+    // synchronous network fetch blocking the main thread — so a non-`file:` scheme must
+    // never resolve to an `.image` block. It should fall back the same way an
+    // unresolvable (`nil`) source already does: as plain paragraph text.
+    func testRemoteImageURLFallsBackToParagraphTextInsteadOfImageBlock() {
+        let source = "![x](https://example.com/image.png)"
+        let blocks = MarkdownRenderer.render(markdown: source, baseURL: URL(fileURLWithPath: "/tmp"))
+
+        XCTAssertEqual(blocks.count, 1)
+        guard case .paragraph = blocks[0].kind else {
+            return XCTFail("Expected paragraph fallback for remote image, got \(blocks[0].kind)")
+        }
+    }
 }

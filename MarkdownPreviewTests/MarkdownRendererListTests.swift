@@ -29,6 +29,29 @@ final class MarkdownRendererListTests: XCTestCase {
         XCTAssertEqual(String(nestedItems[0].content.characters), "Nested item")
     }
 
+    // Verified empirically (see task-14-report.md) that a `SoftBreak`/`LineBreak` node
+    // formatted in isolation via `.format()` produces "" instead of its real separator,
+    // because `.format()` derives that separator from a continuous formatting pass over
+    // a run of siblings — a fix already applied to `inlineText(_:)` for headings/
+    // paragraphs/table cells. List items reuse the same helper (with dedent enabled), so
+    // a plain word-wrapped bullet must join its two source lines with a space, not
+    // concatenate them.
+    func testListItemWithSoftWrapJoinsLinesWithSpace() {
+        let source = """
+        - This is a long line
+          that wraps to two source lines
+        """
+        let blocks = MarkdownRenderer.render(markdown: source, baseURL: baseURL)
+
+        guard case .list(let items, _) = blocks[0].kind else {
+            return XCTFail("Expected list block, got \(blocks[0].kind)")
+        }
+        XCTAssertEqual(
+            String(items[0].content.characters),
+            "This is a long line that wraps to two source lines"
+        )
+    }
+
     func testOrderedList() {
         let source = "1. First\n2. Second"
         let blocks = MarkdownRenderer.render(markdown: source, baseURL: baseURL)

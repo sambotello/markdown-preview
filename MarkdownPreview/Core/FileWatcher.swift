@@ -1,6 +1,15 @@
 import Foundation
 
-final class FileWatcher {
+// The app target builds with `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, which would
+// otherwise make this a MainActor-isolated type by default. That's semantically wrong:
+// `FileWatcher`'s thread-safety comes from its own private serial `queue`, not from the
+// main actor — every dispatch-source event handler, the delayed grace-period check, and
+// the directory-watch fallback all run on `queue` and mutate `source`/`directorySource`/
+// `missingWorkItem` there, never on the main actor. Mark the type `nonisolated` to opt out
+// of the inferred isolation explicitly. (Consumers like `MarkdownDocument` are unaffected:
+// it's `@MainActor` itself and already hops back to `DispatchQueue.main.async` before
+// touching its own state inside the `onEvent` callback.)
+nonisolated final class FileWatcher {
     enum Event {
         case changed
         case missing
