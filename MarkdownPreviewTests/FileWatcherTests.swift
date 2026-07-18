@@ -15,10 +15,20 @@ final class FileWatcherTests: XCTestCase {
 
     func testDetectsWriteToFile() {
         let expectation = expectation(description: "changed")
-        let watcher = FileWatcher(url: tempURL, gracePeriod: 0.05) { event in
+        // Use a grace period far longer than the wait timeout below. The
+        // delete/recreate path (`scheduleMissingCheck`) can only fire `.changed`
+        // after the grace period elapses, so if this test passes within the
+        // 2s timeout while the grace period is 5s, that's proof the direct
+        // in-place-write branch in `handleEvent` fired — not the atomic-save
+        // (delete -> grace-period-check -> reappeared) branch.
+        let watcher = FileWatcher(url: tempURL, gracePeriod: 5.0) { event in
             if case .changed = event { expectation.fulfill() }
         }
-        try? "Updated".write(to: tempURL, atomically: true, encoding: .utf8)
+        // `atomically: false` opens the existing file and overwrites its
+        // contents in place (no unlink/rename), producing a genuine
+        // NOTE_WRITE/NOTE_EXTEND kevent on the already-open watched
+        // descriptor, rather than the NOTE_DELETE an atomic replace produces.
+        try? "Updated".write(to: tempURL, atomically: false, encoding: .utf8)
         wait(for: [expectation], timeout: 2)
         _ = watcher
     }
