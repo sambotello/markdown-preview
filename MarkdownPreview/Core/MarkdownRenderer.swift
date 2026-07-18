@@ -87,7 +87,25 @@ struct MarkdownRenderer: MarkupVisitor {
     }
 
     func inlineText(_ markup: Markup) -> AttributedString {
-        let source = markup.children.map { $0.format() }.joined()
+        // `Markup.format()` derives its output (including the newline a soft/hard line
+        // break contributes) from a continuous formatting pass over a run of siblings.
+        // Because each child here is formatted *independently* and the results are then
+        // string-joined, calling `.format()` on a `SoftBreak`/`LineBreak` in isolation
+        // yields "" — the separator it would normally contribute is never flushed. That
+        // silently concatenates the text on either side of the break with no space at all
+        // (verified empirically: a two-line paragraph's children are `[Text, SoftBreak,
+        // Text]`, and `SoftBreak.format()` alone produces ""). Use each break's own
+        // `plainText` instead, which swift-markdown defines as " " for a soft break (a
+        // reflowed CommonMark line break) and "\n" for a hard break.
+        let source = markup.children.map { child -> String in
+            if let softBreak = child as? SoftBreak {
+                return softBreak.plainText
+            }
+            if let lineBreak = child as? LineBreak {
+                return lineBreak.plainText
+            }
+            return child.format()
+        }.joined()
         let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
         return (try? AttributedString(markdown: source, options: options)) ?? AttributedString(source)
     }
