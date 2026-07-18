@@ -10,7 +10,7 @@ struct TableBlockView: View {
             GridRow {
                 ForEach(Array(headers.enumerated()), id: \.offset) { _, header in
                     Text(header)
-                        .font(.system(size: MarkdownTypography.tableText))
+                        .font(.system(size: MarkdownTypography.tableText, design: MarkdownTypography.bodyFontDesign))
                         .fontWeight(.bold)
                 }
             }
@@ -19,7 +19,7 @@ struct TableBlockView: View {
                 GridRow {
                     ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
                         Text(cell)
-                            .font(.system(size: MarkdownTypography.tableText))
+                            .font(.system(size: MarkdownTypography.tableText, design: MarkdownTypography.bodyFontDesign))
                     }
                 }
             }

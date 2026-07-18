@@ -12,7 +12,7 @@ struct BlockView: View {
                 .fontWeight(.bold)
         case .paragraph(let text):
             Text(text)
-                .font(.system(size: MarkdownTypography.body))
+                .font(.system(size: MarkdownTypography.body, design: MarkdownTypography.bodyFontDesign))
         case .codeBlock(let code, let language):
             CodeBlockView(code: code, language: language)
         case .list(let items, let isOrdered):
