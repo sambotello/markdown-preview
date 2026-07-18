@@ -55,4 +55,49 @@ final class FileWatcherTests: XCTestCase {
         wait(for: [missingExpectation], timeout: 2)
         _ = watcher
     }
+
+    func testRecoversWhenFileReappearsLongAfterMissingGracePeriod() {
+        let missingExpectation = expectation(description: "missing")
+        let recreatedExpectation = expectation(description: "changed-after-recreate")
+        let subsequentWriteExpectation = expectation(description: "changed-after-subsequent-write")
+
+        var changedCount = 0
+        // Short grace period so `.missing` fires quickly and definitively — the
+        // recreate below happens well after this window has closed, so any
+        // `.changed` we see afterward can only come from the parent-directory
+        // fallback watch, not the atomic-save-tolerance path.
+        let watcher = FileWatcher(url: tempURL, gracePeriod: 0.05) { event in
+            switch event {
+            case .missing:
+                missingExpectation.fulfill()
+            case .changed:
+                changedCount += 1
+                if changedCount == 1 {
+                    recreatedExpectation.fulfill()
+                } else if changedCount == 2 {
+                    subsequentWriteExpectation.fulfill()
+                }
+            }
+        }
+
+        try? FileManager.default.removeItem(at: tempURL)
+        wait(for: [missingExpectation], timeout: 2)
+
+        // Wait significantly longer than the grace period before recreating the
+        // file, to prove recovery relies on the parent-directory watch fallback
+        // rather than any leftover grace-period timer. `wait(for:timeout:)` on an
+        // expectation that's never fulfilled simply blocks for the timeout.
+        let delay = expectation(description: "delay-past-grace-period")
+        delay.isInverted = true
+        wait(for: [delay], timeout: 1.5)
+
+        try? "Recreated later".write(to: tempURL, atomically: true, encoding: .utf8)
+        wait(for: [recreatedExpectation], timeout: 3)
+
+        // Confirm normal per-file watching resumed after recovery.
+        try? "Updated again".write(to: tempURL, atomically: false, encoding: .utf8)
+        wait(for: [subsequentWriteExpectation], timeout: 2)
+
+        _ = watcher
+    }
 }
