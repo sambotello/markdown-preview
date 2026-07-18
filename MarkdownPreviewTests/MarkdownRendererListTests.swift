@@ -86,4 +86,71 @@ final class MarkdownRendererListTests: XCTestCase {
         // "Second line" with NO leaked leading-space padding before it.
         XCTAssertEqual(String(items[0].content.characters), "First line  \nSecond line")
     }
+
+    // Final review (round 2): dedenting *every* child's leading whitespace (not just
+    // the first child, or lines that follow a real internal "\n") strips a GENUINE
+    // separator space when a non-first child's content legitimately starts with a
+    // space. `- **bold** text` parses as `[Strong("bold"), Text(" text")]` — the
+    // `Text(" text")` child's own content genuinely starts with a space (the one
+    // between `**bold**` and `text` in the source). It must survive dedenting.
+    func testListItemWithInlineSpanFollowedBySpaceAndTextPreservesSpace() {
+        let source = "- **bold** text"
+        let blocks = MarkdownRenderer.render(markdown: source, baseURL: baseURL)
+
+        guard case .list(let items, _) = blocks[0].kind else {
+            return XCTFail("Expected list block, got \(blocks[0].kind)")
+        }
+        XCTAssertEqual(String(items[0].content.characters), "bold text")
+    }
+
+    func testListItemWithInlineCodeFollowedBySpaceAndTextPreservesSpace() {
+        let source = "- `code` after"
+        let blocks = MarkdownRenderer.render(markdown: source, baseURL: baseURL)
+
+        guard case .list(let items, _) = blocks[0].kind else {
+            return XCTFail("Expected list block, got \(blocks[0].kind)")
+        }
+        XCTAssertEqual(String(items[0].content.characters), "code after")
+    }
+
+    func testListItemWithLinkFollowedBySpaceAndTextPreservesSpace() {
+        let source = "- [link](x) after"
+        let blocks = MarkdownRenderer.render(markdown: source, baseURL: baseURL)
+
+        guard case .list(let items, _) = blocks[0].kind else {
+            return XCTFail("Expected list block, got \(blocks[0].kind)")
+        }
+        XCTAssertEqual(String(items[0].content.characters), "link after")
+    }
+
+    func testListItemWithTextSurroundingInlineSpanPreservesBothSpaces() {
+        let source = "- one *two* three"
+        let blocks = MarkdownRenderer.render(markdown: source, baseURL: baseURL)
+
+        guard case .list(let items, _) = blocks[0].kind else {
+            return XCTFail("Expected list block, got \(blocks[0].kind)")
+        }
+        XCTAssertEqual(String(items[0].content.characters), "one two three")
+    }
+
+    // Nested nesting combines a leaked marker-alignment prefix (from the nested item's
+    // own deeper indentation) with an inline span followed by genuine content — makes
+    // sure the "first child only" dedent rule still applies correctly one level down,
+    // where the leaked prefix is wider (aligned under "  - " rather than "- ").
+    func testNestedListItemWithInlineSpanFollowedBySpaceAndTextPreservesSpace() {
+        let source = """
+        - Outer
+          - **bold** text
+        """
+        let blocks = MarkdownRenderer.render(markdown: source, baseURL: baseURL)
+
+        guard case .list(let items, _) = blocks[0].kind else {
+            return XCTFail("Expected list block, got \(blocks[0].kind)")
+        }
+        XCTAssertEqual(items[0].children.count, 1)
+        guard case .list(let nestedItems, _) = items[0].children[0].kind else {
+            return XCTFail("Expected nested list block, got \(items[0].children[0].kind)")
+        }
+        XCTAssertEqual(String(nestedItems[0].content.characters), "bold text")
+    }
 }

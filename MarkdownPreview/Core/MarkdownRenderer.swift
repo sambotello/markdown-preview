@@ -92,20 +92,41 @@ struct MarkdownRenderer: MarkupVisitor {
         return Block.ListItem(content: content, children: children)
     }
 
-    /// - Parameter dedentListMarkerAlignment: When `true`, strips leading spaces from
-    ///   each *individual child's* formatted output (line by line) before joining.
+    /// - Parameter dedentListMarkerAlignment: When `true`, strips a *leaked*
+    ///   list-marker-alignment prefix from each child's formatted output before joining.
     ///   List item continuation lines are indented in the source to align under the
-    ///   list marker (e.g. two spaces for `"- "`), and swift-markdown's `.format()`
-    ///   re-emits that alignment padding verbatim — not just on genuine continuation
-    ///   lines, but (verified empirically) as a leaked prefix at the very start of
-    ///   *every* top-level child formatted here, since each child is formatted in an
+    ///   list marker (e.g. two spaces for `"- "`, three for `"1. "`, and more for each
+    ///   further level of nesting), and swift-markdown's `.format()` re-emits that
+    ///   alignment padding verbatim — not just on genuine continuation lines, but
+    ///   (verified empirically) as a leaked prefix on the first line of *every*
+    ///   top-level child formatted here, since each child is formatted in its own
     ///   independent pass that still consults the real list-item ancestor chain. That
-    ///   leak must be stripped per child, before joining: once two children are joined
-    ///   by a soft break's plain `" "` separator (see below) rather than a real `"\n"`,
-    ///   a second child's leaked prefix lands mid-string, past any real `"\n"` a
-    ///   whole-string dedent pass could still find. Only list items need this
-    ///   (`makeListItem` passes `true`); headings/paragraphs/table cells aren't
-    ///   indented this way, so they pass `false` (the default).
+    ///   leak is a *constant width* for a given list item (the same leading-space count
+    ///   shows up on every child's first line, confirmed empirically across unordered/
+    ///   ordered markers and nesting depths) — so it must be stripped per line, before
+    ///   joining, rather than only once from a whole joined string: a second child's
+    ///   leaked prefix can land mid-string, past any real `"\n"` a whole-string dedent
+    ///   pass could still find, once children are joined by a soft break's plain `" "`
+    ///   separator (see below) rather than a real `"\n"`.
+    ///
+    ///   The leak must not be confused with genuine content that happens to start with
+    ///   a space: `- **bold** text` parses as `[Strong("bold"), Text(" text")]`, and
+    ///   `Text(" text")`'s own formatted output is the leaked prefix *plus* its one
+    ///   genuine separator space (the space between `**bold**` and `text` in the
+    ///   source) — greedily stripping *all* leading spaces would eat that genuine
+    ///   space too, fusing the words into `"boldtext"`. The fix: measure the leak's
+    ///   exact width once, from the first non-break child's own first line (that
+    ///   child never has genuine leading whitespace of its own, since CommonMark
+    ///   already consumes the marker and its trailing space(s) before a list item's
+    ///   real content begins), then strip only that many leading spaces — never more —
+    ///   from the first line of every child, and from any interior line that follows a
+    ///   real `"\n"` within a single child's own multi-line formatted output. Bounding
+    ///   the strip to the measured width removes exactly the leak and leaves any
+    ///   genuine leading space untouched, producing `"bold text"` rather than
+    ///   `"boldtext"` (over-stripped) or `"bold  text"` (under-stripped, i.e. leak left
+    ///   in place). Only list items need any of this (`makeListItem` passes `true`);
+    ///   headings/paragraphs/table cells aren't indented this way, so they pass `false`
+    ///   (the default).
     func inlineText(_ markup: Markup, dedentListMarkerAlignment: Bool = false) -> AttributedString {
         // `Markup.format()` derives its output (including the newline a soft/hard line
         // break contributes) from a continuous formatting pass over a run of siblings.
@@ -116,21 +137,39 @@ struct MarkdownRenderer: MarkupVisitor {
         // (verified empirically: a two-line paragraph's children are `[Text, SoftBreak,
         // Text]`, and `SoftBreak.format()` alone produces ""). Use each break's own
         // `plainText` instead, which swift-markdown defines as " " for a soft break (a
-        // reflowed CommonMark line break) and "\n" for a hard break.
-        let source = markup.children.map { child -> String in
+        // reflowed CommonMark line break) and "\n" for a hard break. A break's `plainText`
+        // never carries a leaked list-marker prefix (it isn't produced by `.format()`),
+        // so breaks are excluded from the dedent pass below entirely.
+        let chunks: [(text: String, isBreak: Bool)] = markup.children.map { child in
             if let softBreak = child as? SoftBreak {
-                return softBreak.plainText
+                return (softBreak.plainText, true)
             }
             if let lineBreak = child as? LineBreak {
-                return lineBreak.plainText
+                return (lineBreak.plainText, true)
             }
-            let formatted = child.format()
-            guard dedentListMarkerAlignment else { return formatted }
-            return formatted
-                .split(separator: "\n", omittingEmptySubsequences: false)
-                .map { line in String(line.drop(while: { $0 == " " })) }
-                .joined(separator: "\n")
-        }.joined()
+            return (child.format(), false)
+        }
+
+        let source: String
+        if dedentListMarkerAlignment {
+            let leakWidth = chunks.first(where: { !$0.isBreak }).flatMap { chunk -> Int? in
+                guard let firstLine = chunk.text.split(separator: "\n", omittingEmptySubsequences: false).first
+                else { return nil }
+                return firstLine.prefix(while: { $0 == " " }).count
+            } ?? 0
+            source = chunks.map { chunk -> String in
+                guard !chunk.isBreak else { return chunk.text }
+                return chunk.text
+                    .split(separator: "\n", omittingEmptySubsequences: false)
+                    .map { line -> String in
+                        let leadingSpaces = line.prefix(while: { $0 == " " }).count
+                        return String(line.dropFirst(min(leadingSpaces, leakWidth)))
+                    }
+                    .joined(separator: "\n")
+            }.joined()
+        } else {
+            source = chunks.map(\.text).joined()
+        }
         let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
         return (try? AttributedString(markdown: source, options: options)) ?? AttributedString(source)
     }
