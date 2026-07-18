@@ -11,6 +11,10 @@
 			<string>Viewer</string>
 			<key>LSHandlerRank</key>
 			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>net.daringfireball.markdown</string>
+			</array>
 		</dict>
 	</array>
 	<key>UTImportedTypeDeclarations</key>
