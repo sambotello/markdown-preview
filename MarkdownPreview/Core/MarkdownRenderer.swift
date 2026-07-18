@@ -21,7 +21,10 @@ struct MarkdownRenderer: MarkupVisitor {
     }
 
     mutating func visitParagraph(_ paragraph: Paragraph) -> [Block] {
-        [Block(kind: .paragraph(text: inlineText(paragraph)))]
+        if paragraph.childCount == 1, let image = paragraph.child(at: 0) as? Image {
+            return visitImage(image)
+        }
+        return [Block(kind: .paragraph(text: inlineText(paragraph)))]
     }
 
     mutating func visitCodeBlock(_ codeBlock: CodeBlock) -> [Block] {
@@ -44,6 +47,18 @@ struct MarkdownRenderer: MarkupVisitor {
         let headers = Array(table.head.cells).map { inlineText($0) }
         let rows = Array(table.body.rows).map { row in Array(row.cells).map { inlineText($0) } }
         return [Block(kind: .table(headers: headers, rows: rows))]
+    }
+
+    mutating func visitImage(_ image: Image) -> [Block] {
+        guard let source = image.source, let url = resolvedURL(for: source) else { return [] }
+        return [Block(kind: .image(url: url, altText: image.plainText))]
+    }
+
+    private func resolvedURL(for source: String) -> URL? {
+        if let url = URL(string: source), url.scheme != nil {
+            return url
+        }
+        return URL(fileURLWithPath: source, relativeTo: baseURL).absoluteURL
     }
 
     private mutating func makeListItem(_ item: ListItem) -> Block.ListItem {
