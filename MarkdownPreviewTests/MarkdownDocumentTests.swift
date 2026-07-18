@@ -2,6 +2,7 @@
 import XCTest
 @testable import MarkdownPreview
 
+@MainActor
 final class MarkdownDocumentTests: XCTestCase {
     private var tempURL: URL!
 
@@ -29,6 +30,33 @@ final class MarkdownDocumentTests: XCTestCase {
         let document = MarkdownDocument()
         document.load(url: txtURL)
         XCTAssertEqual(document.state, .unsupportedFile)
+    }
+
+    func testRejectingUnsupportedFileStopsWatchingPreviousFile() {
+        let document = MarkdownDocument()
+        document.load(url: tempURL)
+
+        guard case .loaded = document.state else {
+            return XCTFail("Expected loaded state before testing rejection")
+        }
+
+        let txtURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".txt")
+        document.load(url: txtURL)
+        XCTAssertEqual(document.state, .unsupportedFile)
+
+        // Modify the original file; if the old watcher is still running, this would
+        // eventually flip state away from .unsupportedFile.
+        try? "# Changed after rejection".write(to: tempURL, atomically: true, encoding: .utf8)
+
+        let stillRejectedExpectation = expectation(description: "state stays unsupportedFile")
+        stillRejectedExpectation.isInverted = true
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            if document.state != .unsupportedFile {
+                stillRejectedExpectation.fulfill()
+            }
+        }
+        wait(for: [stillRejectedExpectation], timeout: 1.0)
+        timer.invalidate()
     }
 
     func testDetectsExternalEdit() {

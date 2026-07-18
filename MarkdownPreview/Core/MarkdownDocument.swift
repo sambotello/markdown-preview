@@ -2,6 +2,7 @@
 import Foundation
 import Observation
 
+@MainActor
 @Observable
 final class MarkdownDocument {
     enum State: Equatable {
@@ -20,6 +21,8 @@ final class MarkdownDocument {
 
     func load(url: URL) {
         guard Self.supportedExtensions.contains(url.pathExtension.lowercased()) else {
+            watcher = nil
+            self.url = nil
             state = .unsupportedFile
             return
         }
