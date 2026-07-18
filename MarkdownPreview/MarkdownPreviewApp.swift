@@ -1,17 +1,19 @@
-//
-//  MarkdownPreviewApp.swift
-//  MarkdownPreview
-//
-//  Created by Samuel Botello on 17/07/26.
-//
-
+// MarkdownPreview/MarkdownPreviewApp.swift
 import SwiftUI
 
 @main
 struct MarkdownPreviewApp: App {
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        WindowGroup(id: "preview", for: URL.self) { $fileURL in
+            PreviewWindowView(fileURL: $fileURL)
+                .onOpenURL { url in
+                    fileURL = url
+                }
+        }
+        .commands {
+            CommandGroup(replacing: .newItem) {
+                FileOpenCommand()
+            }
         }
     }
 }
