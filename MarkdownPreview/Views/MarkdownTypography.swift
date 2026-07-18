@@ -1,5 +1,5 @@
 // MarkdownPreview/Views/MarkdownTypography.swift
-import CoreGraphics
+import SwiftUI
 
 /// Central place to tune preview font sizes. Change a value here to resize
 /// that element everywhere it's rendered.
@@ -16,4 +16,9 @@ enum MarkdownTypography {
 
     /// Vertical gap between top-level blocks (heading, paragraph, list, etc.).
     static let blockSpacing: CGFloat = 24
+
+    /// Highlightr theme names for code blocks. See `Highlightr().availableThemes()`
+    /// for the full bundled list (e.g. "github", "dracula", "monokai-sublime").
+    static let codeThemeLight = "atom-one-light"
+    static let codeThemeDark = "atom-one-dark"
 }

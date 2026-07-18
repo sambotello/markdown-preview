@@ -13,8 +13,8 @@ struct BlockView: View {
         case .paragraph(let text):
             Text(text)
                 .font(.system(size: MarkdownTypography.body))
-        case .codeBlock(let code, _):
-            CodeBlockView(code: code)
+        case .codeBlock(let code, let language):
+            CodeBlockView(code: code, language: language)
         case .list(let items, let isOrdered):
             ListBlockView(items: items, isOrdered: isOrdered)
         case .table(let headers, let rows):
