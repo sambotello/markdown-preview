@@ -41,6 +41,12 @@ final class MarkdownDocument {
         }
     }
 
+    func close() {
+        watcher = nil
+        url = nil
+        state = .empty
+    }
+
     private func reload() {
         guard let url else { return }
         do {

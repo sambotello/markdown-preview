@@ -21,6 +21,16 @@ struct PreviewWindowView: View {
                         Label("Open", systemImage: "doc.badge.plus")
                     }
                 }
+                if document.state != .empty {
+                    ToolbarItem {
+                        Button {
+                            document.close()
+                            fileURL = nil
+                        } label: {
+                            Label("Close", systemImage: "xmark.circle")
+                        }
+                    }
+                }
             }
             .fileImporter(isPresented: $isImporterPresented, allowedContentTypes: Self.markdownContentTypes) { result in
                 if case .success(let url) = result {
