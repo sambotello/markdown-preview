@@ -76,4 +76,42 @@ final class MarkdownDocumentTests: XCTestCase {
         wait(for: [expectation], timeout: 2)
         timer.invalidate()
     }
+
+    func testIsDirtyReflectsUnsavedChanges() {
+        let document = MarkdownDocument()
+        document.load(url: tempURL)
+        XCTAssertFalse(document.isDirty)
+
+        document.updateDraft("# Changed")
+        XCTAssertTrue(document.isDirty)
+    }
+
+    func testUpdateDraftRerendersPreviewWithoutTouchingDisk() throws {
+        let document = MarkdownDocument()
+        document.load(url: tempURL)
+
+        document.updateDraft("# New Heading")
+
+        guard case .loaded(let blocks) = document.state,
+              case .heading(_, let text) = blocks.first?.kind else {
+            return XCTFail("Expected loaded state with a heading block")
+        }
+        XCTAssertEqual(String(text.characters), "New Heading")
+
+        let onDisk = try String(contentsOf: tempURL, encoding: .utf8)
+        XCTAssertEqual(onDisk, "# Title")
+    }
+
+    func testSaveWritesDraftToDiskAndClearsDirty() throws {
+        let document = MarkdownDocument()
+        document.load(url: tempURL)
+        document.updateDraft("# Saved Content")
+
+        document.save()
+
+        XCTAssertFalse(document.isDirty)
+        XCTAssertNil(document.saveError)
+        let onDisk = try String(contentsOf: tempURL, encoding: .utf8)
+        XCTAssertEqual(onDisk, "# Saved Content")
+    }
 }

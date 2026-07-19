@@ -16,12 +16,18 @@ final class MarkdownDocument {
     private(set) var state: State = .empty
     private(set) var url: URL?
     private(set) var rawText: String?
+    private(set) var savedText: String?
+    private(set) var saveError: String?
     private var watcher: FileWatcher?
 
     private static let supportedExtensions: Set<String> = ["md", "markdown"]
 
     var blocks: [Block]? {
         if case .loaded(let blocks) = state { blocks } else { nil }
+    }
+
+    var isDirty: Bool {
+        rawText != nil && rawText != savedText
     }
 
     func load(url: URL) {
@@ -50,7 +56,30 @@ final class MarkdownDocument {
         watcher = nil
         url = nil
         rawText = nil
+        savedText = nil
+        saveError = nil
         state = .empty
+    }
+
+    func updateDraft(_ text: String) {
+        guard let url else { return }
+        rawText = text
+        state = .loaded(blocks: MarkdownRenderer.render(markdown: text, baseURL: url.deletingLastPathComponent()))
+    }
+
+    func save() {
+        guard let url, let rawText else { return }
+        do {
+            try rawText.write(to: url, atomically: true, encoding: .utf8)
+            savedText = rawText
+            saveError = nil
+        } catch {
+            saveError = error.localizedDescription
+        }
+    }
+
+    func dismissSaveError() {
+        saveError = nil
     }
 
     private func reload() {
@@ -59,9 +88,11 @@ final class MarkdownDocument {
             let source = try String(contentsOf: url, encoding: .utf8)
             let baseURL = url.deletingLastPathComponent()
             rawText = source
+            savedText = source
             state = .loaded(blocks: MarkdownRenderer.render(markdown: source, baseURL: baseURL))
         } catch {
             rawText = nil
+            savedText = nil
             state = .error(message: error.localizedDescription)
         }
     }
