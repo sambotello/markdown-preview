@@ -8,6 +8,12 @@ struct PreviewWindowView: View {
     @State private var document = MarkdownDocument()
     @State private var isImporterPresented = false
     @State private var isEditing = false
+    @State private var pendingAction: PendingAction?
+
+    private enum PendingAction {
+        case close
+        case open(URL)
+    }
 
     private static let markdownContentTypes: [UTType] =
         ["md", "markdown"].compactMap { UTType(filenameExtension: $0) }
@@ -55,8 +61,7 @@ struct PreviewWindowView: View {
                 if document.state != .empty {
                     ToolbarItem {
                         Button {
-                            document.close()
-                            fileURL = nil
+                            requestClose()
                         } label: {
                             Label("Close", systemImage: "xmark.circle")
                         }
@@ -65,14 +70,12 @@ struct PreviewWindowView: View {
             }
             .fileImporter(isPresented: $isImporterPresented, allowedContentTypes: Self.markdownContentTypes) { result in
                 if case .success(let url) = result {
-                    fileURL = url
-                    document.load(url: url)
+                    requestOpen(url: url)
                 }
             }
             .dropDestination(for: URL.self) { urls, _ in
                 guard let url = urls.first else { return false }
-                fileURL = url
-                document.load(url: url)
+                requestOpen(url: url)
                 return true
             }
             .focusedSceneValue(\.markdownDocument, document)
@@ -86,6 +89,97 @@ struct PreviewWindowView: View {
                     document.load(url: newURL)
                 }
             }
+            .alert(
+                "Unsaved Changes",
+                isPresented: Binding(
+                    get: { pendingAction != nil },
+                    set: { isPresented in if !isPresented { pendingAction = nil } }
+                ),
+                presenting: pendingAction
+            ) { action in
+                Button("Save") {
+                    document.save()
+                    if document.saveError == nil {
+                        resolve(action)
+                    } else {
+                        pendingAction = nil
+                    }
+                }
+                Button("Discard", role: .destructive) {
+                    resolve(action)
+                }
+                Button("Cancel", role: .cancel) {
+                    pendingAction = nil
+                }
+            } message: { _ in
+                Text("This file has unsaved changes. Do you want to save them first?")
+            }
+            .alert(
+                "File Changed on Disk",
+                isPresented: Binding(
+                    get: { document.pendingExternalChange != nil },
+                    set: { isPresented in if !isPresented { document.keepMyEdits() } }
+                )
+            ) {
+                Button("Keep My Edits") {
+                    document.keepMyEdits()
+                }
+                Button("Reload From Disk", role: .destructive) {
+                    document.reloadFromDisk()
+                }
+            } message: {
+                Text("This file was changed by another application. Do you want to keep your edits or reload the file from disk?")
+            }
+            .alert(
+                "Couldn't Save File",
+                isPresented: Binding(
+                    get: { document.saveError != nil },
+                    set: { isPresented in if !isPresented { document.dismissSaveError() } }
+                )
+            ) {
+                Button("OK", role: .cancel) {
+                    document.dismissSaveError()
+                }
+            } message: {
+                Text(document.saveError ?? "")
+            }
+    }
+
+    private func requestClose() {
+        if document.isDirty {
+            pendingAction = .close
+        } else {
+            performClose()
+        }
+    }
+
+    private func requestOpen(url: URL) {
+        if document.isDirty {
+            pendingAction = .open(url)
+        } else {
+            performOpen(url: url)
+        }
+    }
+
+    private func resolve(_ action: PendingAction) {
+        pendingAction = nil
+        switch action {
+        case .close:
+            performClose()
+        case .open(let url):
+            performOpen(url: url)
+        }
+    }
+
+    private func performClose() {
+        document.close()
+        fileURL = nil
+        isEditing = false
+    }
+
+    private func performOpen(url: URL) {
+        fileURL = url
+        document.load(url: url)
     }
 
     private func copyFormatted(blocks: [Block]) {
