@@ -12,6 +12,7 @@ struct MarkdownPreviewApp: App {
         }
         .commands {
             CommandGroup(replacing: .newItem) {
+                NewWindowCommand()
                 FileOpenCommand()
             }
         }
