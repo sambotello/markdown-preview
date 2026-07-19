@@ -114,4 +114,103 @@ final class MarkdownDocumentTests: XCTestCase {
         let onDisk = try String(contentsOf: tempURL, encoding: .utf8)
         XCTAssertEqual(onDisk, "# Saved Content")
     }
+
+    func testExternalChangeWhileDirtySetsPendingConflict() {
+        let document = MarkdownDocument()
+        document.load(url: tempURL)
+        document.updateDraft("# My Edit")
+
+        let expectation = expectation(description: "pending conflict")
+        try? "# External Change".write(to: tempURL, atomically: false, encoding: .utf8)
+
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            if document.pendingExternalChange != nil {
+                expectation.fulfill()
+            }
+        }
+        wait(for: [expectation], timeout: 2)
+        timer.invalidate()
+
+        XCTAssertEqual(document.pendingExternalChange, "# External Change")
+        XCTAssertEqual(document.rawText, "# My Edit")
+    }
+
+    func testSaveEchoWhileDirtyIsIgnored() throws {
+        let document = MarkdownDocument()
+        document.load(url: tempURL)
+
+        document.updateDraft("# Saved Version")
+        document.save()
+        XCTAssertFalse(document.isDirty)
+
+        // Type something new before the watcher's echo of the save above arrives.
+        document.updateDraft("# Newer Unsaved Edit")
+        XCTAssertTrue(document.isDirty)
+
+        // Re-touch the file with the content that was actually saved (not the
+        // newer edit) to simulate that delayed echo as a real file event.
+        let noConflictExpectation = expectation(description: "no conflict raised for save echo")
+        noConflictExpectation.isInverted = true
+        try "# Saved Version".write(to: tempURL, atomically: false, encoding: .utf8)
+
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            if document.pendingExternalChange != nil {
+                noConflictExpectation.fulfill()
+            }
+        }
+        wait(for: [noConflictExpectation], timeout: 1.0)
+        timer.invalidate()
+
+        XCTAssertNil(document.pendingExternalChange)
+        XCTAssertEqual(document.rawText, "# Newer Unsaved Edit")
+    }
+
+    func testMissingWhileDirtyLeavesStateUnchanged() {
+        let document = MarkdownDocument()
+        document.load(url: tempURL)
+        document.updateDraft("# Unsaved Edit")
+
+        guard case .loaded = document.state else {
+            return XCTFail("Expected loaded state before deleting file")
+        }
+
+        let staysLoadedExpectation = expectation(description: "state stays loaded while dirty")
+        staysLoadedExpectation.isInverted = true
+        try? FileManager.default.removeItem(at: tempURL)
+
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            if document.state == .fileMissing {
+                staysLoadedExpectation.fulfill()
+            }
+        }
+        wait(for: [staysLoadedExpectation], timeout: 1.0)
+        timer.invalidate()
+
+        guard case .loaded = document.state else {
+            return XCTFail("Expected state to remain loaded, got \(document.state)")
+        }
+        XCTAssertEqual(document.rawText, "# Unsaved Edit")
+
+        // Recreate the file so tearDown's removeItem doesn't fail.
+        try? "# Unsaved Edit".write(to: tempURL, atomically: true, encoding: .utf8)
+    }
+
+    func testMissingWhileNotDirtyTransitionsToFileMissing() {
+        let document = MarkdownDocument()
+        document.load(url: tempURL)
+
+        let expectation = expectation(description: "file missing")
+        try? FileManager.default.removeItem(at: tempURL)
+
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            if document.state == .fileMissing {
+                expectation.fulfill()
+            }
+        }
+        wait(for: [expectation], timeout: 2)
+        timer.invalidate()
+
+        // Recreate the file so tearDown's removeItem doesn't fail.
+        try? "Recreated".write(to: tempURL, atomically: true, encoding: .utf8)
+    }
 }

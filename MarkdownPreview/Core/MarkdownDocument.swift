@@ -18,6 +18,7 @@ final class MarkdownDocument {
     private(set) var rawText: String?
     private(set) var savedText: String?
     private(set) var saveError: String?
+    private(set) var pendingExternalChange: String?
     private var watcher: FileWatcher?
 
     private static let supportedExtensions: Set<String> = ["md", "markdown"]
@@ -44,9 +45,11 @@ final class MarkdownDocument {
                 guard let self else { return }
                 switch event {
                 case .changed:
-                    self.reload()
+                    self.handleExternalChange()
                 case .missing:
-                    self.state = .fileMissing
+                    if !self.isDirty {
+                        self.state = .fileMissing
+                    }
                 }
             }
         }
@@ -58,6 +61,7 @@ final class MarkdownDocument {
         rawText = nil
         savedText = nil
         saveError = nil
+        pendingExternalChange = nil
         state = .empty
     }
 
@@ -80,6 +84,27 @@ final class MarkdownDocument {
 
     func dismissSaveError() {
         saveError = nil
+    }
+
+    func keepMyEdits() {
+        pendingExternalChange = nil
+    }
+
+    func reloadFromDisk() {
+        pendingExternalChange = nil
+        reload()
+    }
+
+    private func handleExternalChange() {
+        guard let url, let newContent = try? String(contentsOf: url, encoding: .utf8) else { return }
+        if newContent == savedText {
+            return
+        }
+        if isDirty {
+            pendingExternalChange = newContent
+        } else {
+            reload()
+        }
     }
 
     private func reload() {
