@@ -15,9 +15,14 @@ final class MarkdownDocument {
 
     private(set) var state: State = .empty
     private(set) var url: URL?
+    private(set) var rawText: String?
     private var watcher: FileWatcher?
 
     private static let supportedExtensions: Set<String> = ["md", "markdown"]
+
+    var blocks: [Block]? {
+        if case .loaded(let blocks) = state { blocks } else { nil }
+    }
 
     func load(url: URL) {
         guard Self.supportedExtensions.contains(url.pathExtension.lowercased()) else {
@@ -44,6 +49,7 @@ final class MarkdownDocument {
     func close() {
         watcher = nil
         url = nil
+        rawText = nil
         state = .empty
     }
 
@@ -52,8 +58,10 @@ final class MarkdownDocument {
         do {
             let source = try String(contentsOf: url, encoding: .utf8)
             let baseURL = url.deletingLastPathComponent()
+            rawText = source
             state = .loaded(blocks: MarkdownRenderer.render(markdown: source, baseURL: baseURL))
         } catch {
+            rawText = nil
             state = .error(message: error.localizedDescription)
         }
     }

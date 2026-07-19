@@ -1,5 +1,6 @@
 // MarkdownPreview/Views/PreviewWindowView.swift
 import SwiftUI
+import AppKit
 import UniformTypeIdentifiers
 
 struct PreviewWindowView: View {
@@ -19,6 +20,26 @@ struct PreviewWindowView: View {
                         isImporterPresented = true
                     } label: {
                         Label("Open", systemImage: "doc.badge.plus")
+                    }
+                }
+                if let rawText = document.rawText {
+                    ToolbarItem {
+                        Button {
+                            let pasteboard = NSPasteboard.general
+                            pasteboard.clearContents()
+                            pasteboard.setString(rawText, forType: .string)
+                        } label: {
+                            Label("Copy Markdown", systemImage: "doc.on.doc")
+                        }
+                    }
+                }
+                if let blocks = document.blocks {
+                    ToolbarItem {
+                        Button {
+                            copyFormatted(blocks: blocks)
+                        } label: {
+                            Label("Copy Formatted", systemImage: "doc.richtext")
+                        }
                     }
                 }
                 if document.state != .empty {
@@ -55,6 +76,22 @@ struct PreviewWindowView: View {
                     document.load(url: newURL)
                 }
             }
+    }
+
+    private func copyFormatted(blocks: [Block]) {
+        let attributed = MarkdownRichTextExporter.makeAttributedString(for: blocks)
+        let range = NSRange(location: 0, length: attributed.length)
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+
+        if let rtf = attributed.rtf(from: range, documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]) {
+            pasteboard.setData(rtf, forType: .rtf)
+        }
+        if let html = try? attributed.data(from: range, documentAttributes: [.documentType: NSAttributedString.DocumentType.html]) {
+            pasteboard.setData(html, forType: .html)
+        }
+        pasteboard.setString(attributed.string, forType: .string)
     }
 
     private var windowTitle: String {
