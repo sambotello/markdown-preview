@@ -12,6 +12,7 @@ struct PreviewWindowView: View {
 
     var body: some View {
         content
+            .navigationTitle(windowTitle)
             .toolbar {
                 ToolbarItem {
                     Button {
@@ -44,6 +45,11 @@ struct PreviewWindowView: View {
                     document.load(url: newURL)
                 }
             }
+    }
+
+    private var windowTitle: String {
+        guard let name = document.url?.lastPathComponent else { return "MarkdownPreview" }
+        return "MarkdownPreview — \(name)"
     }
 
     @ViewBuilder
