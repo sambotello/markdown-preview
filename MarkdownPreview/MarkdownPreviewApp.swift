@@ -15,6 +15,9 @@ struct MarkdownPreviewApp: App {
                 NewWindowCommand()
                 FileOpenCommand()
             }
+            CommandGroup(replacing: .saveItem) {
+                SaveCommand()
+            }
         }
     }
 }
