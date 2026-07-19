@@ -7,6 +7,7 @@ struct PreviewWindowView: View {
     @Binding var fileURL: URL?
     @State private var document = MarkdownDocument()
     @State private var isImporterPresented = false
+    @State private var isEditing = false
 
     private static let markdownContentTypes: [UTType] =
         ["md", "markdown"].compactMap { UTType(filenameExtension: $0) }
@@ -20,6 +21,15 @@ struct PreviewWindowView: View {
                         isImporterPresented = true
                     } label: {
                         Label("Open", systemImage: "doc.badge.plus")
+                    }
+                }
+                if document.blocks != nil {
+                    ToolbarItem {
+                        Button {
+                            isEditing.toggle()
+                        } label: {
+                            Label(isEditing ? "Preview Only" : "Edit", systemImage: isEditing ? "eye" : "square.and.pencil")
+                        }
                     }
                 }
                 if let rawText = document.rawText {
@@ -105,7 +115,14 @@ struct PreviewWindowView: View {
         case .empty:
             DropZoneView()
         case .loaded(let blocks):
-            MarkdownView(blocks: blocks)
+            if isEditing {
+                HSplitView {
+                    editorPane
+                    MarkdownView(blocks: blocks)
+                }
+            } else {
+                MarkdownView(blocks: blocks)
+            }
         case .fileMissing:
             MessageView(systemImage: "questionmark.folder", message: "File no longer available.")
         case .unsupportedFile:
@@ -113,5 +130,13 @@ struct PreviewWindowView: View {
         case .error(let message):
             MessageView(systemImage: "exclamationmark.triangle", message: message)
         }
+    }
+
+    private var editorPane: some View {
+        TextEditor(text: Binding(
+            get: { document.rawText ?? "" },
+            set: { document.updateDraft($0) }
+        ))
+        .font(.system(.body, design: .monospaced))
     }
 }
