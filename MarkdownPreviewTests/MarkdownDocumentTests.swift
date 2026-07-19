@@ -213,4 +213,69 @@ final class MarkdownDocumentTests: XCTestCase {
         // Recreate the file so tearDown's removeItem doesn't fail.
         try? "Recreated".write(to: tempURL, atomically: true, encoding: .utf8)
     }
+
+    func testKeepMyEditsClearsPendingConflictWithoutAlteringDraft() {
+        let document = MarkdownDocument()
+        document.load(url: tempURL)
+        document.updateDraft("# My Edit")
+
+        let expectation = expectation(description: "pending conflict")
+        try? "# External Change".write(to: tempURL, atomically: false, encoding: .utf8)
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            if document.pendingExternalChange != nil {
+                expectation.fulfill()
+            }
+        }
+        wait(for: [expectation], timeout: 2)
+        timer.invalidate()
+
+        document.keepMyEdits()
+
+        XCTAssertNil(document.pendingExternalChange)
+        XCTAssertEqual(document.rawText, "# My Edit")
+        XCTAssertTrue(document.isDirty)
+    }
+
+    func testReloadFromDiskDiscardsDraftAndReplacesWithExternalContent() {
+        let document = MarkdownDocument()
+        document.load(url: tempURL)
+        document.updateDraft("# My Edit")
+
+        let expectation = expectation(description: "pending conflict")
+        try? "# External Change".write(to: tempURL, atomically: false, encoding: .utf8)
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            if document.pendingExternalChange != nil {
+                expectation.fulfill()
+            }
+        }
+        wait(for: [expectation], timeout: 2)
+        timer.invalidate()
+
+        document.reloadFromDisk()
+
+        XCTAssertNil(document.pendingExternalChange)
+        XCTAssertEqual(document.rawText, "# External Change")
+        XCTAssertFalse(document.isDirty)
+    }
+
+    func testSaveClearsAnyPendingExternalConflict() {
+        let document = MarkdownDocument()
+        document.load(url: tempURL)
+        document.updateDraft("# My Edit")
+
+        let expectation = expectation(description: "pending conflict")
+        try? "# External Change".write(to: tempURL, atomically: false, encoding: .utf8)
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            if document.pendingExternalChange != nil {
+                expectation.fulfill()
+            }
+        }
+        wait(for: [expectation], timeout: 2)
+        timer.invalidate()
+
+        document.save()
+
+        XCTAssertNil(document.pendingExternalChange)
+        XCTAssertFalse(document.isDirty)
+    }
 }

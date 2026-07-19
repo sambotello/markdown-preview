@@ -77,6 +77,7 @@ final class MarkdownDocument {
             try rawText.write(to: url, atomically: true, encoding: .utf8)
             savedText = rawText
             saveError = nil
+            pendingExternalChange = nil
         } catch {
             saveError = error.localizedDescription
         }
@@ -96,7 +97,13 @@ final class MarkdownDocument {
     }
 
     private func handleExternalChange() {
-        guard let url, let newContent = try? String(contentsOf: url, encoding: .utf8) else { return }
+        guard let url else { return }
+        guard let newContent = try? String(contentsOf: url, encoding: .utf8) else {
+            if !isDirty {
+                reload()
+            }
+            return
+        }
         if newContent == savedText {
             return
         }
